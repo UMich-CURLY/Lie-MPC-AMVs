@@ -6,8 +6,8 @@
 We propose a Convex geometric error-state MPC for marine vehicles. The proposed algorithm is compared with Nonlinear MPC.
 
 ## Used packages
-#### OSQP : QP solver 
-(https://osqp.org/docs/index.html)
+#### [OSQP](https://osqp.org/docs/index.html) : QP solver 
+
 
 `osqp`
 
