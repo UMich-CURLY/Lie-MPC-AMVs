@@ -46,7 +46,7 @@ Run `main.m` in MATLAB
 * For calculating dynamics of USV Otter, NMPC uses `otter.m` and NMPC-simple uses `otter-simple.m`. They regard ocean current as 0 m/s. True simulation is processed using `otter_true.m` with ocean currents.
 
 ## Results
-### Trajectory tracking result in a current-free environment
+### Trajectory tracking results
 <p float="left">
 <img src="https://github.com/UMich-CURLY/Lie-MPC-AMVs/blob/main/figures/result_1.jpg" width="300">
 <img src="https://github.com/UMich-CURLY/Lie-MPC-AMVs/blob/main/figures/result_2.jpg" width="300">
