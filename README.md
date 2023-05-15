@@ -52,7 +52,7 @@ Run `main.m` in MATLAB
 <img src="https://github.com/UMich-CURLY/Lie-MPC-AMVs/blob/main/figures/result_2.jpg" width="600">
 </p>
 
-### Computation time
+### Computation time (sec)
 | Ocean Current         | Proposed MPC | NMPC |  NMPC-simple |
 |-----------------|:--------:|:--------:|:-----:|
 | 0 m/s      |   58 |   917  | 574 |
