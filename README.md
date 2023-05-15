@@ -28,7 +28,7 @@ Tool for easy implementation of NMPC with CasADi by autonomously transforming th
 #### USV Otter model from MSS 
 (https://github.com/cybergalactic/MSS)
 
-`GNC, HYDRO`
+`GNC`, `HYDRO`
 
 Control input of the otter model is changed from motor speed to thrust force.
 
@@ -38,10 +38,23 @@ Control input of the otter model is changed from motor speed to thrust force.
 `utils`
 
 ## Demonstration
-run `main.m` in MATLAB.
+Run `main.m` in MATLAB
 
 ### Parameters
 * Reference trajectory, ocean currents, prediction horizon, simulation parameters are defined in `main.m`
 * MPC cost weights (P, Q, R) are defined in `sim.m`
 * For calculating dynamics of USV Otter, NMPC uses `otter.m` and NMPC-simple uses `otter-simple.m`. They regard ocean current as 0 m/s. True simulation is processed using `otter_true.m` with ocean currents.
+
+## Results
+### Trajectory tracking result in a current-free environment
+<p float="left">
+<img src="https://github.com/UMich-CURLY/Lie-MPC-AMVs/blob/main/figures/result_1.jpg" width="600">
+<img src="https://github.com/UMich-CURLY/Lie-MPC-AMVs/blob/main/figures/result_2.jpg" width="600">
+</p>
+
+### Computation time
+| Ocean Current         | Proposed MPC | NMPC |  NMPC-simple |
+|-----------------|:--------:|:--------:|:-----:|
+| 0 m/s      |   58 |   917  | 574 |
+| 0.5 m/s    |   60  |   1143  | 552 |
 
