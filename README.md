@@ -27,13 +27,10 @@ Tool for easy implementation of NMPC with CasADi by autonomously transforming th
 
 #### USV Otter model from [MSS](https://github.com/cybergalactic/MSS)
 
-`GNC`, `HYDRO`
+`GNC`, `HYDRO`, `otter.m`
 
 Control input of the otter model is changed from motor speed to thrust force.
 
-#### Original [Error-state MPC code](https://github.com/UMich-CURLY/Error-State-MPC)
-
-`utils`
 
 ## Demonstration
 Run `main.m` in MATLAB
