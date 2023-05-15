@@ -3,7 +3,7 @@
 ### Convex Geometric Trajectory Tracking using Lie Algebraic MPC for Autonomous Marine Vehicles
 
 <img src="https://github.com/UMich-CURLY/Lie-MPC-AMVs/blob/main/figures/framework3.jpg" width="600">
-We propose a Convex geometric error-state MPC for marine vehicles. The proposed algorithm is compared with Nonlinear MPC.
+We propose a computationally-efficient Convex geometric error-state MPC for marine vehicles. The proposed algorithm is compared with Nonlinear MPC.
 
 ## Used packages
 #### 1) [OSQP](https://osqp.org/docs/index.html) : QP solver 
