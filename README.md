@@ -48,8 +48,8 @@ Run `main.m` in MATLAB
 ## Results
 ### Trajectory tracking result in a current-free environment
 <p float="left">
-<img src="https://github.com/UMich-CURLY/Lie-MPC-AMVs/blob/main/figures/result_1.jpg" width="600">
-<img src="https://github.com/UMich-CURLY/Lie-MPC-AMVs/blob/main/figures/result_2.jpg" width="600">
+<img src="https://github.com/UMich-CURLY/Lie-MPC-AMVs/blob/main/figures/result_1.jpg" width="300">
+<img src="https://github.com/UMich-CURLY/Lie-MPC-AMVs/blob/main/figures/result_2.jpg" width="300">
 </p>
 
 ### Computation time (sec)
