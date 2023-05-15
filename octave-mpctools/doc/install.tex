@@ -1,0 +1,84 @@
+\documentclass[xcolor=dvipsnames]{beamer}
+
+\usepackage{mpctools}
+\setbeamertemplate{navigation symbols}{}
+
+\begin{document}
+%
+\begin{frame}[allowframebreaks]{Installation}
+    Install Octave or Matlab.
+    \begin{itemize}
+        \item Octave must be version 4.0 or later
+        \begin{itemize}
+            \item Older versions will not work
+            \item See \clickurl{https://www.gnu.org/software/octave/\#install}
+        \end{itemize}
+        \item Matlab should be R2016a or later
+        \begin{itemize}
+            \item Other versions may work but have not been tested
+            \item See \clickurl{https://www.mathworks.com/help/install/index.html}
+        \end{itemize}
+    \end{itemize}
+    
+    \medskip
+    
+    Optional: install Octave packages/Matlab toolboxes
+    \begin{itemize}
+        \item Although \mpctools{} itself does not require them, example scripts will use functions from the Control and Optimization packages/toolboxes
+        \item On Octave, run \lstinline!pkg install -forge struct control optim! and follow instructions
+        \item On Matlab, use the add-on explorer (you will need a license for each toolbox)
+    \end{itemize}
+    
+    \framebreak
+    
+    Download \casadi{}
+    \begin{itemize}
+        \item Windows/Linux/Mac zip file available at \clickurl{https://web.casadi.org/get/}
+            \begin{itemize}
+                \item Choose the latest version compatible with your setup
+                \item Theoretically, any version $\geq$ 3.1 should work
+            \end{itemize}
+        \item Create a folder called \texttt{casadi} and unzip everything there
+    \end{itemize}
+    
+    \medskip
+    
+    Download \mpctools{}
+    \begin{itemize}
+        \item Download zipped package: \bitbucketlink{}
+        \begin{itemize}
+            \item Click ``Downloads'' (in menu on the left)
+            \item Choose \texttt{mpctools.zip}
+        \end{itemize}
+        \item Unzip \texttt{mpctools} folder to a convenient location
+        \begin{itemize}
+            \item Typically best to use the same directory where you created \texttt{casadi} in the previous step
+        \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Making Sure Everything Works}
+    First, open Octave or Matlab and add the folders to your path
+    \begin{itemize}
+        \item Run \lstinline!addpath('/path/to/casadi', '/path/to/mpctools')!
+        \begin{itemize}
+            \item Windows Octave users must also run \lstinline!setenv('CASADIPATH', '/path/to/casadi')!
+        \end{itemize}
+        \item Note that the initial path components will depend on where you unzipped the files, but the final components should be \texttt{casadi} and \texttt{mpctools}
+        \item Run \lstinline!which('casadiMEX')! and \lstinline!which('import_mpctools')! to make sure the paths are added
+        \begin{itemize}
+            \item If you do not get output, \octave{} can't find the necessary scripts
+        \end{itemize}
+    \end{itemize}
+    
+    \medskip
+    
+    Then, try to run the examples in \smallurl{mpctools/examples-src}
+    \begin{itemize}
+        \item In Octave or Matlab, \lstinline!cd! to the appropriate directory
+        \item Run the scripts as usual using the script name (without \texttt{.m} extension) or via \lstinline!run('scriptname.m')!
+        \item Entering \lstinline!runall()! will run all of the example scripts and show all the plots at the end
+    \end{itemize}
+\end{frame}
+
+\end{document}

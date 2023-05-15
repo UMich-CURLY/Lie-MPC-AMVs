@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Get relevant directories.
+testdir=$(cd $(dirname "${BASH_SROUCE[0]}") && pwd)
+rootdir=$(dirname "$testdir")
+
+# Choose Octave paths.
+casadidir=$testdir/casadi
+echo "'casadi' links to '$(readlink $testdir/casadi)'"
+mpctoolsdir=$rootdir
+examplesdir=$rootdir/examples-src
+
+# Start Octave without GUI or user .octaverc file.
+octave --norc --no-gui --path "$casadidir" --path "$mpctoolsdir" \
+       --path "$examplesdir" "$@"

@@ -1,0 +1,344 @@
+\documentclass{article}
+
+\usepackage[left=.5in,right=.5in,top=.75in,bottom=.75in]{geometry}
+\usepackage{mpctools}
+\usepackage{enumitem}
+
+\title{\mpctools{} \octave{} Cheat Sheet}
+
+\begin{document}
+
+\begin{center}
+    \LARGE \mpctools{} \octave{} Cheat Sheet
+\end{center}
+
+\section{Functions Reference}
+
+Here we present some of the most useful functions from \mpctools{}.
+These descriptions are not intended to be complete, and you should consult the complete documentation (\texttt{documentation.pdf}) for more details.
+
+\begin{multicols}{2}
+
+\paragraph*{Obtaining \mpctools{}.}
+
+The latest files can be found on \bitbucketlink{}.
+You will see a link on the left to download all of the files in a compressed archive.
+No specific installation is required beyond \octave{} and \casadi{}, but note that \casadi{} must be at least Version 3.1.
+
+\paragraph*{Getting Started.}
+
+Functions are stored in a package called \texttt{mpctools} using \octave{}'s \texttt{+package} system.
+To access these functions, you will need to put the folder \texttt{+mpctools} and the file \texttt{import\_mpctools.m} \emph{inside} a folder that is on your \octave{} path.
+For example, if \texttt{/home/me/octave} is on your \octave{} path, you should put \texttt{+mpctools} and \texttt{import\_mpctools.m} inside \texttt{/home/me/octave}.
+You \emph{cannot} add the \texttt{+mpctools} folder directly to your path.
+
+To use the functions within your code, we provide the \texttt{import\_mpctools} function that returns a ``module'' struct that contains handles to all of the functions in the public API.
+For example, your script should start with
+%
+\begin{lstlisting}[frame=L]
+mpc = import_mpctools();
+\end{lstlisting}
+%
+which will allow you to access each of the function names with the syntax \texttt{mpc.getCasadiFunc}, \texttt{mpc.nmpc}, etc.
+If instead you want direct access to the functions, you can use
+%
+\begin{lstlisting}[frame=L]
+import_mpctools('*');
+\end{lstlisting}
+%
+which will instead place all the function handles in the current workspace.
+
+\paragraph*{Function Usage}
+
+All of the functions returned by \lstinline|import_mpctools()| allow arguments to be specified positionally, using keywords via \lstinline|'keyword', value| pairs, or as a structure whose fields are the keywords and values are values.
+Consult \texttt{documentation.pdf} for more details.
+
+Many functions have optional arguments or default values that aren't listed below.
+Consult the complete documentation in \texttt{documentation} to see what additional keyword options are available.
+
+\paragraph*{Building \casadi{} Functions.}
+
+To simplify creation of \casadi{} functions, there are a few convenience wrappers.
+
+\funcname{getCasadiFunc(f,argsizes,argnames)}
+
+Takes a function handle and sizes of arguments to build a \casadi{} \texttt{Function} object.
+Note that the original function \texttt{f} should return a single (column) vector.
+The input \texttt{argnames} is optional, but it should be a cell array of strings that give variable names.
+This helps make things self-documenting.
+
+Optional arguments are available to return a Runge-Kutta discretization.
+For this, you must specify \lstinline|'rk4', true| and also provide arguments \texttt{Delta} with the timestep and \texttt{M} with the number of steps to take in each interval.
+Example usage is shown below.
+
+\begin{lstlisting}[frame=L]
+mpc = import_mpctools();
+
+% 2 states and 1 control.
+function dxdt = ode(x,u)
+    dxdt = [x(1)^2 + u(1); x(2) - u(1)];
+end
+
+ode = mpc.getCasadiFunc(@ode, [2,1], {'x','u'});
+
+Delta = 0.5; % Set timestep.
+ode_rk4 = mpc.getCasadiFunc(ode, [2,1], {'x','u'}, ...
+    'rk4', true, 'Delta', Delta, 'M', 1);
+\end{lstlisting}
+
+\funcname{getCasadiIntegrator(f,Delta,argsizes,argnames)}
+
+Returns an \texttt{Integrator} object to integrate the Python function \texttt{f} from time 0 to \texttt{Delta}.
+\texttt{argsizes} and \texttt{argnames} are the same as in \texttt{getCasadiFunc}, but the differential variables (i.e., $x$ in $dx/dt = f(x,y,z)$) must come first.
+These objects are useful to simulate plants with nonlinear ODEs.
+They can also be used as the plant ``model'' for particularly challenging ODEs, although they can significantly slow the optimization.
+
+\paragraph*{Solving MPC Problems.}
+
+For regulation problems, the function \texttt{nmpc} should be used.
+
+\funcname{nmpc(f,l,N,x0)}
+
+\texttt{f} and \texttt{l} should be individual \casadi{} functions to describe state evolution and stage costs.
+\texttt{N} is a struct that holds all of the relevant sizes.
+It must have entries \lstinline|x|, \lstinline|u|, and \lstinline|t|, all of which are integers.
+\texttt{x0} is the starting state.
+Additional optional arguments are given below.
+
+\begin{itemize}[noitemsep,nolistsep]
+    \item \texttt{Vf}: a single \casadi{} function of $x$ to use as a terminal cost.
+    \item \texttt{lb}, \texttt{ub}, \texttt{guess}: Structs with entries \lstinline@x@ and/or \lstinline@"u"@, to define box constraints or an initial guess for the optimal values of $x$ and $u$.
+    Entries for $x$ should be an array of size \lstinline@N.t+1@ by \lstinline@N.x@, and for $u$, entries should be \lstinline@N.t@ by \lstinline@N.u@.
+    Note that the time dimensions can be omitted if the bounds are not time-varying.
+    \item \texttt{uprev}: Value of the previous control input.
+    If provided, variables $\Delta u$ will be added to the control problem.
+    Bounds for $\Delta u$ can be specified as \lstinline|Du| entries in \texttt{lb} and \texttt{ub}.
+    \item \texttt{verbosity}: an integer to control how detailed the solver output is.
+    Lower numbers give less output. Default is 0 (no output).
+\end{itemize}
+
+This function returns a \texttt{ControlSolver} object (see ``Repeated Optimization'' below for more details).
+
+For continuous-time problems, there are a few options.
+To use Runge-Kutta methods, you can convert your function ahead of time (e.g., with \lstinline@'rk4', true@ as above).
+To use collocation, you can add an entry \lstinline|c| to the argument \texttt{N} to specify the number of collocation points on each time interval.
+This also requires specifying the sample time \texttt{Delta}.
+Note that if you want a continuous-time objective function (i.e., integral of $\ell(x(t),u(t))$ instead of a sum), then you can specify \lstinline@'discretel', false@ as an argument.
+Note that this is only supported with collocation.
+
+\paragraph*{State Estimation.}
+
+For nonlinear state estimation, we provide a moving-horizon estimation function and an Extended Kalman Filter function.
+
+\funcname{nmhe(f,h,u,y,l,N)}
+
+Solves a nonlinear MHE problem.
+As with \texttt{nmpc}, arguments \texttt{f}, \texttt{h}, and \texttt{l} should be individual \casadi{} functions.
+\texttt{f} must be $f(x,u,w)$, \texttt{h} must be $h(x)$, and \texttt{l} must be $\ell(w,v)$.
+\texttt{u} and \texttt{y} must be arrays of past control inputs and measurements.
+These arrays must have time running along columns so that \lstinline@y(:,t)@ gives the value of $y$ at time $t$.
+
+As in \texttt{nmpc}, the input \texttt{N} must be a struct of sizes.
+This must have entries \lstinline@t@, \lstinline@x@, \lstinline@u@, and \lstinline@y@.
+Note that \lstinline@N[t]@ gives the number of time \emph{intervals}, which means \texttt{u} should have \lstinline@N.t@ data points, while \texttt{y} should have \lstinline@N.t + 1@ data points.
+It may also have a \lstinline@w@ entry, but this is set equal to \lstinline@N.x@ if not supplied.
+Note that for feasibility reasons, \lstinline@N.v@ is always set to \lstinline@N.y@ regardless of user input. Additional optional arguments are given below.
+
+\begin{itemize}[noitemsep,nolistsep]
+    \item \texttt{lx}, \texttt{x0bar}: arrival cost for initial state.
+    \texttt{lx} should be a \casadi{} function of only $x$.
+    It is included in the objective function as $\ell_x(x_0, \overline{x}_0)$.
+    \item \texttt{lb}, \texttt{ub}, \texttt{guess}: Structs to hold bounds and a guess for the decision variables.
+    Same as in \texttt{nmpc}.
+    \item \texttt{verbosity}: same as in \texttt{nmpc}.
+\end{itemize}
+
+The return value is the same as in \texttt{nmpc}.
+
+\funcname{ekf(f,h,x,u,w,y,P,Q,R)}
+
+Advances one step using the Extended Kalman Filter.
+\texttt{f} and \texttt{h} must be \casadi{} functions.
+\texttt{x}, \texttt{u}, \texttt{w}, and \texttt{y} should be the state estimate $\hat{x}(k|k-1)$, the controller move, the state noise (only its shape is important), and the current measurement.
+\texttt{P} should be the prior covariance $P(k|k-1)$.
+\texttt{Q} and \texttt{R} should be the covariances for the state noise and measurement noise.
+Returns values
+%
+\begin{equation*}
+    [P(k+1|k), \; \hat{x}(k+1|k), \; P(k|k), \; \hat{x}(k|k)].
+\end{equation*}
+
+\paragraph*{Steady-State Targets.}
+
+For steady-state target selection, we provide a function \texttt{sstarg} as described below.
+
+\funcname{sstarg(f,h,N)}
+
+Solves a nonlinear steady-state target problem.
+\texttt{f} must be $f(x,u)$ and \texttt{h} must be $h(x)$
+As with the other functions, the input \texttt{N} must be a struct of sizes.
+This must have entries \lstinline@x@, \lstinline@u@, and \lstinline@y@.
+Additional arguments are below.
+
+\begin{itemize}[noitemsep,nolistsep]
+    \item \texttt{phi}, \texttt{funcargs}: Objective function for if the solution is non-unique.
+    \texttt{phi} must be a \casadi{} function to define the objective to use in the case of non-unique steady states.
+    \item \texttt{lb}, \texttt{ub}, \texttt{guess}: Structs to hold bounds and a guess for the decision variables.
+    Each entry must be a column vector.
+    Note that if you want to force outputs $y$ to a specific value, you should set equal lower and upper bounds for those entries (e.g., via \lstinline|ControlSolver.fixvar('y', 1, ysp)|).
+    \item \texttt{verbosity}: same as in \texttt{nmpc}.
+\end{itemize}
+
+\paragraph*{Repeated Optimization.}
+
+If you plan to be solving the same optimization repeatedly, speed can be improved by using the \texttt{ControlSolver} class.
+These objects are the returned value of \texttt{nmpc}, \texttt{nmhe}, or \texttt{sstarg}.
+Below we list the useful methods for this class.
+
+\funcname{fixvar(var,t,val)}
+
+Fixes the variable named \texttt{var} to take on the value \texttt{val} at time \texttt{t}.
+This is most useful for changing the initial conditions, e.g., with
+%
+\begin{lstlisting}[frame=L]
+solver.fixvar('x',0,x0)
+\end{lstlisting}
+%
+which allows for easy re-optimization.
+You can also specify a fourth argument \texttt{inds}, if you only want to set a subset of indices for that variable (e.g., \lstinline|contvars = [1; 3]; solver.fixvar('y',1,ysp(contvars),contvars)| to only fix the first and third values of $y$).
+
+\funcname{solve()}
+
+Solves the optimization problem.
+Some stats (including solver success or failure) is stored into the \texttt{solver.stats} dictionary, the status string is stored in \texttt{solver.status} (although it may or may not be correctly defined for solvers other than IPOPT), and the optimal values of the variables are in the \texttt{solver.var} struct (e.g., \lstinline|solver.var.x(:,t)| gives the optimal value of $x$ at time $t$).
+
+\funcname{saveguess()}
+
+Takes the current solution and stores the values as a guess to the optimizer.
+By default, time values are offset by 1. This is done so that
+%
+\begin{lstlisting}[frame=L]
+solver.solve();
+if isequal(solver.status, 'Solve_Succeeded')
+    solver.saveguess();
+    solver.fixvar('x',0,solver.var.x(:,1));
+end
+\end{lstlisting}
+%
+prepares the solver for re-optimization at the next time point by using the final $N-1$ values of the previous trajectory as a guess for the first $N-1$ time periods in the next optimization.
+
+\paragraph{Plotting.}
+
+For quick plotting, we have the \texttt{mpcplot} function.
+Required arguments are \texttt{x} and \texttt{u}, both 2D arrays with each column giving the value of $x$ or $u$ at a given time point, and a vector \texttt{t} of time points.
+Note that \texttt{t} should have as many entries as \texttt{x} has columns, while \texttt{u} should have one fewer columns.
+
+\paragraph*{Linear MPC Functions.}
+
+There are no specific functions to handle linear problems.
+However, you can specify the option \lstinline|'isQP', true'| in each of \texttt{nmpc}, \texttt{nmhe}, and \texttt{sstarg} to let the solver know that the constraints are linear and the objective function quadratic, which can potentially speed up solution.
+
+To linearize nonlinear systems, we provide a useful function.
+
+\funcname{getLinearizedModel(f, args, names)}
+
+Evaluates the derivatives of the \casadi{} function \lstinline@f@ at the point indicated in \lstinline$args$ (which should be a cell array of column vectors) and returns a dictionary.
+\lstinline$names$ should be a cell array of keys to use in the returned dictionary.
+Optionally, you can specify a \lstinline@Delta@ keyword argument to discretize the returned matrices.
+
+\paragraph*{Choosing the Solver.}
+
+By default, all optimization problems are solved using the NLP solver IPOPT.
+To choose a different solver, specify a \lstinline|'solver', solver| option to \texttt{nmpc}, \texttt{nmhe}, or \texttt{sstarg}.
+By default, \casadi is bundled with the solvers IPOPT, qpOASES (for quadratic programs), and BONMIN (for mixed-integer problems).
+For each of these, \texttt{solver} should be a lower-case string, e.g., \lstinline|'ipopt'|, \lstinline|'qpoases'|, and \lstinline|'bonmin'|.
+If installed on your machine, you may also use Gurobi (string \lstinline|'gurobi'|).
+Note however that \casadi{} does not (yet) provide full access to solver options for any solver besides IPOPT, and thus certain options (most notably \lstinline|'verbosity'| and \lstinline|'timelimit'|) may not be respected if \texttt{solver} is not \lstinline|'ipopt'|.
+
+\paragraph*{Function Arguments}
+
+Generally, the functions used in MPC-style control problems have standard arguments, for example $f(x,u)$, $\ell(x,u)$ for control, or $f(x,u,w)$, $\ell(w,v)$ for estimation.
+However, if your instance does not follow these default patterns, you can adjust the number and order of arguments that each function takes by providing the argument names to \lstinline|getCasadiFunc()|.
+For example, in \lstinline|nmpc()|, if your stage cost function is only a function of $x$ and not $u$, then you would define
+%
+\begin{lstlisting}[frame=L]
+l = mpctools.getCasadiFunc(@(x) x'*x, [2], {'x'});
+\end{lstlisting}
+%
+The function \lstinline|nmpc()| will then check the argument number and names.
+
+Note that each name must exactly correspond to the name of a variable (or parameter; see next section) in the optimization problem, e.g., \lstinline|'x'|, \lstinline|'u'|, etc.
+If, for some reason, you cannot define the functions with the correct argument names, you can also use a \lstinline|'funcargs'| argument as follows:
+%
+\begin{lstlisting}[frame=L]
+l = mpctools.getCasadiFunc(@(x) x'*x, [2], {'not_x'});
+funcargs = struct();
+funcargs.l = {'x'};
+mpctools.nmpc('l', l, 'funcargs', funcargs, ...
+\end{lstlisting}
+%
+Without \lstinline|funcargs|, this code would otherwise lead to an error.
+
+\paragraph*{Problem Parameters}
+
+Often, your problem may have parameters that you would like to change after each optimization, or even parameters that change within the horizon of the current optimization problem.
+To support these situations, \lstinline|nmpc()|, \lstinline|nmhe()|, and \lstinline|sstarg()| all take a \lstinline|'par'| keyword argument in which you should pass a struct of parameter values.
+These parameters can be scalars, vectors, or matrices.
+To make the parameters time-varying, time should be running along the second dimension (third in the case of matrix parameters; see \texttt{gainscheduling.m} for an example).
+
+To use these parameters in each function, you simply define the function as taking additional named arguments, for example
+%
+\begin{lstlisting}[frame=L]
+function cost = stagecost(x, u, xsp, usp)
+    dx = x - xsp;
+    du = u - usp;
+    cost = dx'*dx + du'*du;
+end%function
+l = mpctools.getCasadiFunc(@stagecost, ...
+    [2, 2, 3, 3], {'x', 'u', 'xsp', 'usp'});
+\end{lstlisting}
+%
+To track a time-varying setpoint, you then define \lstinline|par.xsp| and \lstinline|par.usp| as matrices with each column giving the setpoint for that time (see \texttt{timevaryingmpc.m} for an example).
+
+Time-varying parameters are accessed modulo length.
+For example, if your parameters have a period of 10 and your prediction horizon is 25, you only need to provide the 10 unique parameters, and for times 11 and beyond, the appropriate column will be chosen.
+
+\end{multicols}
+
+\section{Common Mistakes}
+
+Below we list some common issues that may cause headaches.
+
+\begin{itemize}
+    \item Poor initial guesses to solvers.
+    
+    By default, all variables are given guesses of 0.
+    For models in deviation variables, this makes sense, but for general models, these values can cause problems, e.g., if there are divisions or logarithms any where.
+    Make sure you supply an initial guess if the optimal variables are expected to be nowhere near 0, and it helps if the guess is consistent with lower and upper bounds.
+    For difficult problems, it may help to solve a series of small problems to get a feasible starting guess for the large overall problem.
+    
+    \item Tight state constraints.
+    
+    Although the solvers allow constraints on all decision variables, tight constraints on the state variables (e.g., that the system terminate at the origin) can be troublesome for the solver.
+    Consider using a penalty function first to get a decent guess and then re-solving with hard constraints from there.
+\end{itemize}
+
+\section{Disclaimer}
+
+Note that since \casadi{} is in active development, \mpctools{} will need to be updated to reflect changes in \casadi{}'s \octave{} API.
+Additionally, function internals may change significantly as we identify better or more useful ways to wrap the relevant \casadi{} functions.
+This means function call syntax may change, although we will strive to maintain compatibility wherever possible.
+
+As mentioned previously, the latest files can always be found on \bitbucketlink{}.
+For questions, comments, or bug reports, please open an issue on Bitbucket or contact us by email.
+
+\begin{center}
+\begin{tabular}{cc}
+    Michael J. Risbeck & James B. Rawlings \\
+    \smallurl[\small]{risbeck@wisc.edu} & \smallurl[\small]{james.rawlings@wisc.edu} \\
+    \multicolumn{2}{c}{University of Wisconsin--Madison} \\
+    \hspace*{.2\textwidth} & \hspace*{.2\textwidth} % Kluge alert. I hate latex tables.
+\end{tabular}
+\end{center}
+
+\end{document}

@@ -1,0 +1,22 @@
+#!/bin/bash
+# Usage: rununittests [version1 [version2 ...]]
+#
+# Runs unit tests for MPCTools. If no arguments are supplied, uses the current
+# version of Casadi. Otherwise, runs tests for each version supplied.
+
+currenttest(){
+    ./octave --quiet --no-window-system --eval "rununittests('quiet');"
+}
+
+if [ "$#" -eq 0 ]
+then
+    echo "Running current tests"
+    currenttest
+else
+    echo "Running tests for the following versions: $*"
+    for v in $*
+    do
+        make -s $v && currenttest
+    done
+fi
+

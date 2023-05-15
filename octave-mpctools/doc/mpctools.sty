@@ -1,0 +1,39 @@
+% Common packages and macros for MPCTools documentation.
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{mpctools}[4/4/2017 Author: Michael Risbeck]
+
+\usepackage{mathtools,bm,textcomp,multicol,parcolumns,array}
+
+\usepackage{listings}
+\providecommand{\lstinline}{}
+\lstdefinestyle{output}{
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\ttfamily,
+    stringstyle=\ttfamily,
+    commentstyle=\ttfamily,
+    upquote=true,
+    showstringspaces=false,
+}
+\lstdefinestyle{octave}{
+    language=Octave,
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{Blue}\ttfamily,
+    stringstyle=\color{Purple}\ttfamily,
+    commentstyle=\color{ForestGreen}\ttfamily,
+    upquote=true,
+    escapechar=`,
+}
+\lstset{style=octave}
+
+\usepackage[dvipsnames]{xcolor}
+
+\usepackage{hyperref}
+\newcommand{\smallurl}[2][\scriptsize]{\texttt{#1$<$#2$>$}}
+\newcommand{\clickurl}[2][\scriptsize]{\href{#2}{\textcolor{blue}{\smallurl[#1]{#2}}}}
+\newcommand{\funcname}[2][.25em]{\vspace{#1}\noindent\texttt{#2}\nopagebreak\vspace{#1}}
+\newcommand{\casadi}{CasADi}
+\newcommand{\octave}{\mbox{Octave/Matlab}} % mbox to prevent hyphenation.
+\newcommand{\mpctools}{MPCTools}
+\newcommand{\bitbucketlink}{\clickurl{https://bitbucket.org/rawlings-group/octave-mpctools}}
+
+\providecommand{\sepline}{\vspace{-2em}}

@@ -1,0 +1,194 @@
+\documentclass{article}
+
+\usepackage[T1]{fontenc}
+\usepackage{upquote}
+\usepackage[left=.5in,right=.5in,top=.75in,bottom=.75in]{geometry}
+\usepackage{mathtools,bm,textcomp}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{url}
+\usepackage{hyperref}
+
+\newcommand{\casadi}{CasADi}
+\newcommand{\mpctools}{MPCTools}
+\newcommand{\octave}{Octave/Matlab}
+\newcommand{\bitbucketlink}{\url{https://bitbucket.org/rawlings-group/octave-mpctools}}
+
+% Stuff for source codes.
+\usepackage{listings}
+\providecommand{\lstinline}{}
+\lstdefinestyle{octave}{
+    language=Octave,
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{Blue}\ttfamily,
+    stringstyle=\color{Purple}\ttfamily,
+    commentstyle=\color{ForestGreen}\ttfamily,
+    upquote=true,
+    escapechar=`,
+}
+\lstset{style=octave}
+
+% Don't indent paragraphs.
+\usepackage{parskip}
+\setlength{\parindent}{0pt}
+
+% Pandoc commands.
+\providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+
+\title{\mpctools{} Documentation}
+
+\begin{document}
+
+\begin{center}
+    \LARGE \mpctools{} Documentation
+\end{center}
+
+\section{Introduction}
+
+\mpctools{} is a model predictive control (MPC) oriented interface to \casadi{} for Octave and Matlab.
+It is intended to be a replacement for the legacy \texttt{mpc-tools} developed by the Rawlings group from 2000 to 2010.
+Here we document the \octave{} interface, which is available as of \casadi{} v3.1.
+
+Current development sources can be found at \bitbucketlink{}.
+
+\section{General Function Usage}
+
+Each of these functions can take arguments positionally and as keyword, value pairs (with keywords given as strings).
+Just as in Python, there can be a sequence of positional arguments followed by a sequence of (keyword, value) arguments.
+Note that allowing both types of arguments creates an ambiguity for positional arguments that are also strings.
+Thus, to pass a string positional argument, you must wrap the string in a cell array.
+Note that structs can also be used using a keyword of \texttt{**} (similar to Python's \texttt{**} operator).
+For arguments that are not supplied, the default value (if any) will be used.
+Passing an empty matrix \texttt{[]} for any argument also specifies that the default is requested (similar to passing \texttt{None} in Python).
+
+As an example, consider a function \texttt{func} that takes two numeric arguments ``x'' (no default value) and ``y'' (with default value 1), as well as a string argument ``name'' (default value \texttt{'func'}).
+Each of the following function calls is equivalent:
+%
+\begin{itemize}
+    \item \lstinline!func(0)! (Positional arguments with implied defaults)
+    \item \lstinline!func(0, [], [])! (Positional arguments with explicit defaults)
+    \item \lstinline!func(0, 1, \{'name'\}, 'func')! (Positional string argument)
+    \item \lstinline!func(0, 'y', 1, 'name', 'func')! (Mix of positional and keyword arguments)
+    \item \lstinline!func('x', 0, 'y', 1)! (Keyword arguments with implied defaults)
+    \item \lstinline!func('x', 0, 'name', 'func')! (Keyword string argument)
+    \item \lstinline!func(0, '**' struct('y', 1, 'name', 'func'))! (Struct with some keyword arguments)
+    \item \lstinline!func('**', struct('x', 0, 'y', 1))! (Struct of all keyword arguments)
+    \item \lstinline!func(0, 'y', 1, '**', struct('name', 'func'))! (All three input types)
+\end{itemize}
+%
+For readability, it is best to use all keyword arguments for functions with more than roughly 4 arguments.
+
+Note that as features are added to \mpctools{}, additional keyword arguments may be added to functions.
+In general, these arguments will be added at the end of the argument list.
+However, from time to time, an argument will be added earlier in the list, thus shifting the position of all arguments that follow.
+Thus, to avoid compatibility issues with future versions of \mpctools{}, you should only use positional arguments for the arguments that are listed in the function signature
+(i.e., given in the first line of the documentation string before \texttt{...}).
+For all arguments not listed in the function signature, you should use keyword, value pairs.
+
+Documentation for specific functions is given below.
+
+\section{Optimization Variables and Parameters}
+
+Within each optimization, symbols $x$ are used for states, $u$ for controls, $y$ for measured outputs, $w$ for estimated state disturbances, and $v$ for estimated measurement noise.
+These are considered the ``standard'' variables, as they are present in many control, MHE, and steady-state target problems.
+By default, the call signature for each function used within the optimization problem is taken from the variable names of the corresponding \casadi{} function.
+For example, to use the standard $f(x,u)$, you should define the \casadi{} function \lstinline!f! as
+%
+\begin{lstlisting}
+f = mpctools.getCasadiFunc(@f, [Nx, Nu], {'x', 'u'})
+\end{lstlisting}
+%
+with the third argument to \lstinline!getCasadiFunc()! giving the variable identifiers as strings.
+If you do not provide these names, or if you need to override them, you can use the \lstinline!'funcargs'! keyword to \lstinline!nmpc!, \lstinline!nmhe!, and \lstinline!sstarg! (see full function documentation in Section \ref{sec:fulldoc}).
+
+For control problems, setpoints are denoted $x_\text{sp}$ and $u_\text{sp}$ (written \lstinline!'xsp'! and \lstinline!'usp'! as string identifiers).
+To use these setpoints in the stage cost, use arguments \lstinline!'xsp'! and \lstinline!'usp'! in its definition.
+For example, using the standard quadratic stage cost $\ell(x,u,t) = (x - x_\text{sp}(t))'Q(x - x_\text{sp}(t)) + (u - u_\text{sp}(t))'R(u - u_\text{sp}(t))$, you should define
+%
+\begin{lstlisting}
+function cost = stagecost(x, u, xsp, usp)
+    Q = 1;
+    R = 1;
+    dx = x - xsp;
+    du = u - usp;
+    cost = dx'*Q*dx + du'*R*du;
+end
+l = mpctools.getCasadiFunc(@stagecost, [Nx, Nu, Nx, Nu], {'x', 'u', 'xsp', 'usp'})
+\end{lstlisting}
+%
+Note that the (time-varying) values of $x_\text{sp}$ and $u_\text{sp}$ are stored in \lstinline!ControlSolver.par.xsp! and \lstinline!ControlSolver.par.usp!.
+See example script \texttt{timevaryingmpc.m} for complete example usage.
+
+Changes in outputs are denoted $\Delta u$ (string \lstinline!Du!).
+These can be used in \lstinline!nmpc! in one of two ways: first, if there is a \lstinline!Du! field in any of the \lstinline!'lb'!, \lstinline!'ub'!, or \lstinline!'guess'! arguments; and second, if there is a \lstinline!'Du'! argument in any of the functions \lstinline!f!, \lstinline!l!, or \lstinline!e!.
+
+To facilitate one-norm or other linear objectives, we also provide the special variables \lstinline!'absx'!, \lstinline!'absu'!, and \lstinline!'absDu'!.
+These are meant to be surrogates for $|x|$, $|u|$, and $|\Delta u|$ in the sense that they are defined as
+%
+\begin{align*}
+    \text{abs}x & \ge x \\
+    \text{abs}x & \ge -x
+\end{align*}
+%
+with similar expressions for $u$ and $\Delta u$.
+Thus, they will be exactly equal to the corresponding absolute value as long as they are included in a convex positive-definite penalty term in the objective.
+
+For parameters besides $x_\text{sp}$ and $u_\text{sp}$, we use the special identifier $p$ for time-varying vector-valued parameters.
+Any user-defined parameters can be given arbitrary variable names (provided they do not clash with the reserved names discussed in this section) and passed in the \lstinline|'par'| argument to \lstinline!nmpc!, \lstinline!nmhe!, and \lstinline!sstarg!.
+Note that these parameters can be vectors or matrices, but they must be constant-in-time.
+They can be used as function arguments as with $x_\text{sp}$ and $u_\text{sp}$.
+
+\section{Solver Options}
+
+To facilitate setting solver options, the \texttt{ControlSolver} class takes keyword arguments \texttt{verbosity}, \texttt{timelimit}, etc., to set common solver options.
+These values will be translated into the solver-specific option names and applied to the solver object.
+Note that these values can also be passed as keyword arguments to \texttt{nmpc()}, \texttt{nmhe()}, and \texttt{sstarg()}.
+See Section~\ref{sec:ControlSolver} for more details.
+
+To set solver-specific options that do not have a common name, you should use \texttt{ControlSolver.init()}.
+This method takes a set of \texttt{'key', value} pairs.
+For example, IPOPT has a \texttt{tol} parameter that controls the relative convergence tolerance. To set this value, you would use, e.g.,
+%
+\begin{lstlisting}
+controller = mpctools.nmpc(..., 'solver', 'ipopt');
+controller.init('tol', 1e-10);
+\end{lstlisting}
+%
+To see what options are available for your particular solver, use \texttt{ControlSolver.getoptions()} (not available for some solvers) or consult the \casadi{} documentation.
+
+% Function-specific documentation is generated elsewhere.
+\section{Public API Documentation} \label{sec:fulldoc}
+
+Below, we document all functions in the \mpctools{} public API.
+Function arguments are generally listed as
+%
+\begin{itemize}
+    \item \texttt{argname} : Argument Type [\texttt{default value (if any)}]
+\end{itemize}
+%
+This information can also be accessed in \octave{} using the typical \lstinline!help! function with an \lstinline!'mpctools'! prefix, e.g., \lstinline!help('mpctools.getCasadiFunc')!.
+
+\input{mdoc.tex}
+
+\section{ControlSolver Documentation} \label{sec:ControlSolver}
+
+Below, we document all public attributes and member functions to the \texttt{ControlSolver} class.
+Note that, in contrast to the functions in the previous section, these member functions accept only positional arguments.
+
+\input{ControlSolver.tex}
+
+\section{MHESolver Documentation}
+
+Below, we document the public attributes and member functions of the \texttt{MHESolver} class.
+Note that \texttt{MHESolver} is a subclass of \texttt{ControlSolver}, and thus includes all of its methods as well.
+These functions take only positional arguments.
+
+\input{MHESolver.tex}
+
+\section{KalmanFilter Documentation}
+
+Below, we document all public attributes and member functions to the \texttt{KalmanFilter} class.
+The class constructor accepts both positional and keyword arguments, while the other member functions take only positional arguments.
+
+\input{KalmanFilter.tex}
+
+\end{document}

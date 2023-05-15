@@ -1,0 +1,21 @@
+\documentclass{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{mpctools}
+
+\title{\casadi{} vs. \mpctools{}}
+
+\begin{document}
+
+\maketitle
+
+Below, we present an example file to show how much code is saved by using \mpctools{}.
+On the left side, we show the the script written using the pure \casadi{} module, while on the right, we show the script rewritten to use \mpctools{}.
+
+\hspace{1em}
+
+\input{casadivsmtc.tex}
+
+Even for this simple example, \mpctools{} can save a significant amount of coding, and it makes script files much shorter and more readable while still taking advantage of the computational power provided by \casadi{}.
+
+\end{document}
