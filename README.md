@@ -1,12 +1,13 @@
 # Geometric trajectory tracking MPC for Autonomous Marine Vehicles
 
-<img src="[figures/framework3.jpg?raw=true](https://github.com/UMich-CURLY/Lie-MPC-AMVs/blob/main/figures/framework3.jpg)" width="200">
+<img src="https://github.com/UMich-CURLY/Lie-MPC-AMVs/blob/main/figures/framework3.jpg" width="200">
 We propose a Convex geometric error-state MPC for marine vehicles. The proposed algorithm is compared with Nonlinear MPC.
 
 ## Used packages
 #### OSQP : QP solver (https://osqp.org/docs/index.html)
 `osqp`
-installation is required to run the code.
+
+Installation is required to run the code.
 
 #### CasADi : NMPC solver (https://web.casadi.org/get/)
 `casadi-linux-matlabR2014b-v3.5.5`
