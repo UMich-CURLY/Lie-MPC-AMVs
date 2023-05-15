@@ -8,26 +8,24 @@ We propose a Convex geometric error-state MPC for marine vehicles. The proposed 
 ## Used packages
 #### [OSQP](https://osqp.org/docs/index.html) : QP solver 
 
-
-`osqp`
+Folder : `osqp`
 
 Installation is required to run the code.
 
 #### [CasADi](https://web.casadi.org/get/) : NMPC solver 
 
-
-`casadi-linux-matlabR2014b-v3.5.5`
+Folder : `casadi-linux-matlabR2014b-v3.5.5`
 
 #### [MPC-tools](https://bitbucket.org/rawlings-group/octave-mpctools) for CasADi 
 
 
-`octave-mpctools`
+Folder : `octave-mpctools`
 
 Tool for easy implementation of NMPC with CasADi by autonomously transforming the given dynamics model into the proper format.
 
 #### USV Otter model from [MSS](https://github.com/cybergalactic/MSS)
 
-`GNC`, `HYDRO`, `otter.m`
+Folder : `GNC`, `HYDRO`
 
 Control input of the otter model is changed from motor speed to thrust force.
 
