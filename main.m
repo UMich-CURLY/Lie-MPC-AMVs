@@ -3,7 +3,7 @@ clear all; clc;close all;
 addpath(genpath("./"));
 %%
 rng(2);
-Ns = 1; 
+Ns = 10; 
 dt = 0.05; % MPC simulation time step
 Nsim = ceil(65 / dt); % Total simulation time + Planning time
 mode = 1; %% mode 1= zigzag, mode 2= circling
