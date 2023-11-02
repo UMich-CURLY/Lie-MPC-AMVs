@@ -2,6 +2,7 @@
 
 ### Convex Geometric Trajectory Tracking using Lie Algebraic MPC for Autonomous Marine Vehicles
 IEEE Robotics & Automation Letters
+
 paper link: https://ieeexplore.ieee.org/document/10301632
 
 <img src="https://github.com/UMich-CURLY/Lie-MPC-AMVs/blob/main/figures/framework3.jpg" width="600">
