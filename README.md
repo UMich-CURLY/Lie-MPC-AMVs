@@ -1,7 +1,7 @@
 # Lie MPC for AMVs
 
 ### Convex Geometric Trajectory Tracking using Lie Algebraic MPC for Autonomous Marine Vehicles
-
+RA-L: https://ieeexplore.ieee.org/document/10301632
 <img src="https://github.com/UMich-CURLY/Lie-MPC-AMVs/blob/main/figures/framework3.jpg" width="600">
 We propose a computationally-efficient Convex geometric error-state MPC for marine vehicles. The proposed algorithm is compared with Nonlinear MPC.
 
@@ -51,9 +51,9 @@ Run `main.m` in MATLAB
 </p>
 
 
-### Computation time (sec)
+### Computation time (msec) for single optimization
 | Ocean Current         | Proposed MPC | NMPC |  NMPC-simple |
 |-----------------|:--------:|:--------:|:-----:|
-| 0 m/s      |   58 |   917  | 574 |
-| 0.5 m/s    |   60  |   1143  | 552 |
+| 0 m/s      |   49 |   764  | 478 |
+| 0.5 m/s    |   50  |   953  | 460 |
 
